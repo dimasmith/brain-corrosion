@@ -7,19 +7,14 @@
 
 use std::{
     cell::RefCell,
-    io::{stdin, stdout, BufReader, BufWriter, ErrorKind, Read, Write},
+    io::{ErrorKind, Read, Write},
     rc::Rc,
 };
 
-use crate::vm::Vm;
+use crate::vm::{Vm, Output, Input, standatd_output, standard_input};
 
 const DEFAULT_MEMORY_SIZE: usize = 30000;
 
-/// Input reader reference for virtual machine.
-pub type Input = Rc<RefCell<dyn Read>>;
-
-/// Output writer reference for virtual machine.
-pub type Output = Rc<RefCell<dyn Write>>;
 
 /// Executable instruction for virtual machine.
 ///
@@ -239,14 +234,6 @@ impl Vm for StandardVm {
 
         Ok(())
     }
-}
-
-fn standatd_output() -> Output {
-    Rc::new(RefCell::new(BufWriter::new(stdout())))
-}
-
-fn standard_input() -> Input {
-    Rc::new(RefCell::new(BufReader::new(stdin())))
 }
 
 impl Default for StandardVm {

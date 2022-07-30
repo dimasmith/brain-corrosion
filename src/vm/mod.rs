@@ -1,5 +1,7 @@
 //! Brainfuck virtual machines definitions and implementations.
 
+use std::{rc::Rc, cell::RefCell, io::{Read, Write, BufReader, stdin, stdout, BufWriter}};
+
 pub mod standard;
 
 /// A trait for brainfuck virtual machine.
@@ -12,3 +14,20 @@ pub trait Vm {
     /// Run the program in a virtual machine.
     fn run(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error>;
 }
+
+/// Input reader reference for virtual machine.
+pub type Input = Rc<RefCell<dyn Read>>;
+
+/// Create reference to the standard input.
+pub fn standard_input() -> Input {
+    Rc::new(RefCell::new(BufReader::new(stdin())))
+}
+
+/// Output writer reference for virtual machine.
+pub type Output = Rc<RefCell<dyn Write>>;
+
+/// Create reference to the standard output.
+pub fn standatd_output() -> Output {
+    Rc::new(RefCell::new(BufWriter::new(stdout())))
+}
+
