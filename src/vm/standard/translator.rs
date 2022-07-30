@@ -2,6 +2,30 @@
 
 use crate::{parser::Token, vm::standard::vm::Operation};
 
+/// Translates source code tokens to virtual machine instructions.
+///
+/// ```
+/// use brainfuck::vm::standard::translator;
+/// use brainfuck::vm::standard::vm::Operation;
+/// use brainfuck::parser::Token;
+///
+/// let program = translator::translate(&[
+///     Token::Inc,
+///     Token::Stl,
+///     Token::Dec,
+///     Token::Endl,
+/// ]);
+///
+/// assert_eq!(
+///     *program,
+///     [
+///         Operation::Inc,
+///         Operation::LoopForward,
+///         Operation::Dec,
+///         Operation::LoopBack,
+///     ]
+/// )
+/// ```
 pub fn translate(tokens: &[Token]) -> Box<[Operation]> {
     let ops: Vec<Operation> = tokens
         .iter()
@@ -17,4 +41,37 @@ pub fn translate(tokens: &[Token]) -> Box<[Operation]> {
         })
         .collect();
     ops.into_boxed_slice()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn translate_all_tokens() {
+        let program = translate(&[
+            Token::Inc,
+            Token::Dec,
+            Token::Stl,
+            Token::Endl,
+            Token::Shl,
+            Token::Shr,
+            Token::In,
+            Token::Out,
+        ]);
+
+        assert_eq!(
+            *program,
+            [
+                Operation::Inc,
+                Operation::Dec,
+                Operation::LoopForward,
+                Operation::LoopBack,
+                Operation::Prev,
+                Operation::Next,
+                Operation::In,
+                Operation::Out,
+            ]
+        )
+    }
 }
