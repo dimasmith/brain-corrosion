@@ -7,7 +7,7 @@
 
 use std::{
     cell::RefCell,
-    io::{stdin, stdout, BufReader, BufWriter, Error, Read, Write},
+    io::{stdin, stdout, BufReader, BufWriter, ErrorKind, Read, Write},
     rc::Rc,
 };
 
@@ -15,7 +15,7 @@ use crate::vm::Vm;
 
 const DEFAULT_MEMORY_SIZE: usize = 30000;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Operation {
     Inc,
     Dec,
@@ -27,10 +27,13 @@ pub enum Operation {
     LoopBack,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum Err {
-    UnclosedLoop,
-    IoError,
+/// Errors thrown by the virtual machine during execution.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VmError {
+    NoLoopEnd,
+    NoLoopStart,
+    OutOfProgramMemory,
+    IoError(ErrorKind),
 }
 
 /// Virtual machine for direct brainfuck execution.
@@ -102,29 +105,35 @@ impl StandardVm {
         self.ip + 1
     }
 
-    fn read(&mut self) -> Result<usize, Error> {
+    fn read(&mut self) -> Result<usize, VmError> {
         let mut buf: [u8; 1] = [0; 1];
-        self.input.borrow_mut().read_exact(&mut buf)?;
+        self.input
+            .borrow_mut()
+            .read_exact(&mut buf)
+            .map_err(|ioe| VmError::IoError(ioe.kind()))?;
         self.put(buf[0]);
         Ok(self.ip + 1)
     }
 
-    fn write(&mut self) -> Result<usize, Error> {
+    fn write(&mut self) -> Result<usize, VmError> {
         let data: [u8; 1] = [self.get()];
-        self.output.borrow_mut().write_all(&data)?;
+        self.output
+            .borrow_mut()
+            .write_all(&data)
+            .map_err(|ioe| VmError::IoError(ioe.kind()))?;
         Ok(self.ip + 1)
     }
 
-    fn loop_zero(&mut self) -> Result<usize, Err> {
+    fn loop_zero(&mut self) -> Result<usize, VmError> {
         if self.get() != 0 {
             return Ok(self.ip + 1);
         }
-        self.ip += 1;
+        self.ip_next().map_err(|_| VmError::NoLoopEnd)?;
         let mut nested = 0;
-        while let Some(op) = self.operation() {
-            match op {
-                Operation::LoopForward => nested += 1,
-                Operation::LoopBack => {
+        loop {
+            match self.operation() {
+                Some(Operation::LoopForward) => nested += 1,
+                Some(Operation::LoopBack) => {
                     if nested == 0 {
                         return Ok(self.ip + 1);
                     }
@@ -132,21 +141,20 @@ impl StandardVm {
                 }
                 _ => {}
             }
-            self.ip += 1;
+            self.ip_next().map_err(|_| VmError::NoLoopEnd)?;
         }
-        Err(Err::UnclosedLoop)
     }
 
-    fn loop_back_nz(&mut self) -> Result<usize, Err> {
+    fn loop_back_nz(&mut self) -> Result<usize, VmError> {
         if self.get() == 0 {
             return Ok(self.ip + 1);
         }
-        self.ip -= 1;
+        self.ip_prev().map_err(|_| VmError::NoLoopStart)?;
         let mut nested = 0;
-        while let Some(op) = self.operation() {
-            match op {
-                Operation::LoopBack => nested += 1,
-                Operation::LoopForward => {
+        loop {
+            match self.operation() {
+                Some(Operation::LoopBack) => nested += 1,
+                Some(Operation::LoopForward) => {
                     if nested == 0 {
                         return Ok(self.ip + 1);
                     }
@@ -154,9 +162,8 @@ impl StandardVm {
                 }
                 _ => {}
             }
-            self.ip -= 1;
+            self.ip_prev().map_err(|_| VmError::NoLoopStart)?;
         }
-        Err(Err::UnclosedLoop)
     }
 
     fn get(&self) -> u8 {
@@ -166,31 +173,45 @@ impl StandardVm {
     fn put(&mut self, v: u8) {
         self.memory[self.mp] = v;
     }
+
+    fn ip_prev(&mut self) -> Result<usize, VmError> {
+        if self.ip > 0 {
+            self.ip -= 1;
+            return Ok(self.ip);
+        }
+        Err(VmError::OutOfProgramMemory)
+    }
+
+    fn ip_next(&mut self) -> Result<usize, VmError> {
+        if self.ip < self.program.len() - 1 {
+            self.ip += 1;
+            return Ok(self.ip);
+        }
+        Err(VmError::OutOfProgramMemory)
+    }
 }
 
 impl Vm for StandardVm {
     type Operation = Operation;
 
-    type Error = Err;
+    type Error = VmError;
 
     fn run(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error> {
         self.reset();
         self.program = program;
 
-        let mut op = self.operation();
-        while op.is_some() {
-            let ip = match op.unwrap() {
+        while let Some(op) = self.operation() {
+            let ip = match op {
                 Operation::Inc => self.inc(),
                 Operation::Dec => self.dec(),
                 Operation::Next => self.mem_next(),
                 Operation::Prev => self.mem_prev(),
-                Operation::In => self.read().map_err(|_| Err::IoError)?,
-                Operation::Out => self.write().map_err(|_| Err::IoError)?,
+                Operation::In => self.read()?,
+                Operation::Out => self.write()?,
                 Operation::LoopForward => self.loop_zero()?,
                 Operation::LoopBack => self.loop_back_nz()?,
             };
             self.ip = ip;
-            op = self.operation();
         }
 
         Ok(())
@@ -379,5 +400,27 @@ mod tests {
 
         assert_eq!(vm.get(), 11, "2n+1 should be calculated");
         assert_eq!(vm.ip, 14, "instruction pointer must be at end");
+    }
+
+    #[test]
+    fn unclosed_loop() {
+        let mut vm = StandardVm::default();
+        let program = Box::new([Operation::LoopForward]);
+
+        let result = vm.run(program);
+
+        assert!(result.is_err(), "the loop is not closed and VM must fail");
+        assert_eq!(result.err().unwrap(), VmError::NoLoopEnd);
+    }
+
+    #[test]
+    fn loop_without_opening() {
+        let mut vm = StandardVm::default();
+        let program = Box::new([Operation::Inc, Operation::LoopBack]);
+
+        let result = vm.run(program);
+
+        assert!(result.is_err(), "the loop is not closed and VM must fail");
+        assert_eq!(result.err().unwrap(), VmError::NoLoopStart);
     }
 }
