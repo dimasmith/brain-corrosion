@@ -1,12 +1,12 @@
 use std::{
     cell::RefCell,
-    io::{stdin, BufReader, Write},
+    io::{BufReader, Write},
     rc::Rc,
 };
 
-use brainfuck::parser::parse;
+use brainfuck::vm::standard::translator;
 use brainfuck::vm::Vm;
-use brainfuck::vm::standard::{translator, vm::StandardVm};
+use brainfuck::{parser::parse, vm::standard::vm::StandardVmBuilder};
 
 struct TestOut {
     buf: Vec<u8>,
@@ -44,9 +44,8 @@ fn run_program(source: &str) -> String {
     let tokens = parse(&mut program_input).unwrap();
     let ops = translator::translate(tokens.as_ref());
     let output = Rc::new(RefCell::new(TestOut::default()));
-    let input = Rc::new(RefCell::new(stdin()));
     {
-        let mut vm = StandardVm::io(output.clone(), input.clone());
+        let mut vm = StandardVmBuilder::new().with_output(output.clone()).build();
         vm.run(ops).unwrap();
     }
     output.clone().as_ref().borrow().to_string()

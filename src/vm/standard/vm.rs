@@ -15,24 +15,47 @@ use crate::vm::Vm;
 
 const DEFAULT_MEMORY_SIZE: usize = 30000;
 
+/// Input reader reference for virtual machine.
+pub type Input = Rc<RefCell<dyn Read>>;
+
+/// Output writer reference for virtual machine.
+pub type Output = Rc<RefCell<dyn Write>>;
+
+/// Executable instruction for virtual machine.
+///
+/// The set of operations is exactly the same as in brainfuck languate definition.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Operation {
+    /// `+` - Increment the memory cell at the pointer
     Inc,
+    /// `-` - Decrement the memory cell at the pointer
     Dec,
+    /// `>` - Move the pointer to the right
     Next,
+    /// `<` - Move the pointer to the left
     Prev,
+    /// `,` - Input a character and store it in the cell at the pointer
     In,
+    /// `.` - Output the character signified by the cell at the pointer
     Out,
+    /// `[` - Jump past the matching ] if the cell at the pointer is 0
     LoopForward,
+    /// `]` - Jump back to the matching [ if the cell at the pointer is nonzero
     LoopBack,
 }
 
 /// Errors thrown by the virtual machine during execution.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum VmError {
+    /// Unmatched `[` instruction
     NoLoopEnd,
+    /// Unmatched `]` instruction
     NoLoopStart,
+    /// Instruction pointer outside of the program memory.
+    /// This should not happen and indicates a programming error.
     OutOfProgramMemory,
+    /// Error during IO operation.
+    /// Contains error kind for root cause analysis.
     IoError(ErrorKind),
 }
 
@@ -50,13 +73,13 @@ pub struct StandardVm {
     mp: usize,
     program: Box<[Operation]>,
     ip: usize,
-    output: Rc<RefCell<dyn Write>>,
-    input: Rc<RefCell<dyn Read>>,
+    output: Output,
+    input: Input,
 }
 
 impl StandardVm {
     /// Create VM with custom input and output.
-    pub fn io(output: Rc<RefCell<dyn Write>>, input: Rc<RefCell<dyn Read>>) -> Self {
+    pub fn io(output: Output, input: Input) -> Self {
         StandardVm {
             output,
             input,
@@ -218,6 +241,14 @@ impl Vm for StandardVm {
     }
 }
 
+fn standatd_output() -> Output {
+    Rc::new(RefCell::new(BufWriter::new(stdout())))
+}
+
+fn standard_input() -> Input {
+    Rc::new(RefCell::new(BufReader::new(stdin())))
+}
+
 impl Default for StandardVm {
     /// Create VM with the 30_000 bytes of memory and standard input and output.
     fn default() -> Self {
@@ -227,9 +258,76 @@ impl Default for StandardVm {
             mp: 0,
             program: vec![].into_boxed_slice(),
             ip: 0,
-            output: Rc::new(RefCell::new(BufWriter::new(stdout()))),
-            input: Rc::new(RefCell::new(BufReader::new(stdin()))),
+            output: standatd_output(),
+            input: standard_input(),
         }
+    }
+}
+
+/// Builder for standard VM.
+///
+/// # Example
+/// ```
+/// use brainfuck::vm::standard::vm::StandardVmBuilder;
+///
+/// let compact_vm = StandardVmBuilder::new()
+///     .with_memory_size(0xff)
+///     .build();
+/// ```
+pub struct StandardVmBuilder {
+    mem_size: Option<usize>,
+    output: Option<Output>,
+    input: Option<Input>,
+}
+
+impl StandardVmBuilder {
+    /// Create virtual machine builder.
+    pub fn new() -> Self {
+        StandardVmBuilder {
+            mem_size: None,
+            output: None,
+            input: None,
+        }
+    }
+
+    /// Set amount of memory to be used with the virtual machine.
+    pub fn with_memory_size(mut self, size: usize) -> Self {
+        self.mem_size = Some(size);
+        self
+    }
+
+    /// Set reference to output writer.
+    pub fn with_output(mut self, output: Rc<RefCell<dyn Write>>) -> Self {
+        self.output = Some(output);
+        self
+    }
+
+    /// Set reference to input reader.
+    pub fn with_input(mut self, input: Rc<RefCell<dyn Read>>) -> Self {
+        self.input = Some(input);
+        self
+    }
+
+    /// Build configured virtual machine.
+    ///
+    /// The method sets any non-specified configuration parameters
+    /// to their default values.
+    pub fn build(self) -> StandardVm {
+        let memory = vec![0; self.mem_size.unwrap_or(DEFAULT_MEMORY_SIZE)].into_boxed_slice();
+        let output = self.output.unwrap_or_else(|| standatd_output());
+        let input = self.input.unwrap_or_else(|| standard_input());
+        StandardVm {
+            memory,
+            output,
+            input,
+            ..StandardVm::default()
+        }
+    }
+}
+
+impl Default for StandardVmBuilder {
+    fn default() -> Self {
+        StandardVmBuilder::new()
     }
 }
 
