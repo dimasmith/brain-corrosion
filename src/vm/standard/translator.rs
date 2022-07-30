@@ -1,6 +1,6 @@
-//! Traslates parser output to the virtual machine operations.
+//! Traslates parser output to the operations of standard virtual machine.
 
-use crate::{parser::Token, vm::Operation};
+use crate::{parser::Token, vm::standard::vm::Operation};
 
 pub fn translate(tokens: &[Token]) -> Box<[Operation]> {
     let ops: Vec<Operation> = tokens

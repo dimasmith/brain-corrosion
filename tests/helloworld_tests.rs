@@ -4,7 +4,9 @@ use std::{
     rc::Rc,
 };
 
-use brainfuck::{parser::parse, translator::translate, vm::BrainfuckVm};
+use brainfuck::parser::parse;
+use brainfuck::vm::Vm;
+use brainfuck::vm::standard::{translator, vm::StandardVm};
 
 struct TestOut {
     buf: Vec<u8>,
@@ -40,11 +42,11 @@ impl Default for TestOut {
 fn run_program(source: &str) -> String {
     let mut program_input = BufReader::new(source.as_bytes());
     let tokens = parse(&mut program_input).unwrap();
-    let ops = translate(tokens.as_ref());
+    let ops = translator::translate(tokens.as_ref());
     let output = Rc::new(RefCell::new(TestOut::default()));
     let input = Rc::new(RefCell::new(stdin()));
     {
-        let mut vm = BrainfuckVm::io(output.clone(), input.clone());
+        let mut vm = StandardVm::io(output.clone(), input.clone());
         vm.run(ops).unwrap();
     }
     output.clone().as_ref().borrow().to_string()
