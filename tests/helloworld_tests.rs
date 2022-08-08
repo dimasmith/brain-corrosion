@@ -3,10 +3,10 @@ use std::{
     io::{BufReader, Write},
     rc::Rc,
 };
-
-use brainfuck::vm::standard::translator;
-use brainfuck::vm::Vm;
-use brainfuck::{parser::parse, vm::standard::vm::StandardVmBuilder};
+use brain_corrosion::parser::parse;
+use brain_corrosion::vm::standard::translator;
+use brain_corrosion::vm::standard::vm::StandardVmBuilder;
+use brain_corrosion::vm::Vm;
 
 struct TestOut {
     buf: Vec<u8>,

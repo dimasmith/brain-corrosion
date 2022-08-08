@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "brainfuck"
+name = "brain_corrosion"
 version = "0.0.1"

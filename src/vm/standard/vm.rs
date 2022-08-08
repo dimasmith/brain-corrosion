@@ -73,12 +73,26 @@ pub struct StandardVm {
 }
 
 impl StandardVm {
+
+    /// Create vm with standard parameters.
+    pub fn new() -> Self {
+        let mem = vec![0; DEFAULT_MEMORY_SIZE];
+        StandardVm {
+            memory: mem.into_boxed_slice(),
+            mp: 0,
+            program: vec![].into_boxed_slice(),
+            ip: 0,
+            output: standatd_output(),
+            input: standard_input(),
+        }
+    }
+
     /// Create VM with custom input and output.
-    pub fn io(output: Output, input: Input) -> Self {
+    pub fn with_io(output: Output, input: Input) -> Self {
         StandardVm {
             output,
             input,
-            ..Default::default()
+            ..StandardVm::new()
         }
     }
 
@@ -239,15 +253,7 @@ impl Vm for StandardVm {
 impl Default for StandardVm {
     /// Create VM with the 30_000 bytes of memory and standard input and output.
     fn default() -> Self {
-        let mem = vec![0; DEFAULT_MEMORY_SIZE];
-        StandardVm {
-            memory: mem.into_boxed_slice(),
-            mp: 0,
-            program: vec![].into_boxed_slice(),
-            ip: 0,
-            output: standatd_output(),
-            input: standard_input(),
-        }
+        StandardVm::new()
     }
 }
 
@@ -255,7 +261,7 @@ impl Default for StandardVm {
 ///
 /// # Example
 /// ```
-/// use brainfuck::vm::standard::vm::StandardVmBuilder;
+/// # use brain_corrosion::vm::standard::vm::StandardVmBuilder;
 ///
 /// let compact_vm = StandardVmBuilder::new()
 ///     .with_memory_size(0xff)

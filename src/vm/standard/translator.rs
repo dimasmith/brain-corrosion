@@ -5,9 +5,9 @@ use crate::{parser::Token, vm::standard::vm::Operation};
 /// Translates source code tokens to virtual machine instructions.
 ///
 /// ```
-/// use brainfuck::vm::standard::translator;
-/// use brainfuck::vm::standard::vm::Operation;
-/// use brainfuck::parser::Token;
+/// use brain_corrosion::vm::standard::translator;
+/// use brain_corrosion::vm::standard::vm::Operation;
+/// use brain_corrosion::parser::Token;
 ///
 /// let program = translator::translate(&[
 ///     Token::Inc,

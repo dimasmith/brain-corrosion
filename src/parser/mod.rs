@@ -23,7 +23,7 @@ pub enum Token {
 /// Parse brainfuck program source into the list of tokens.
 ///
 /// ```
-/// # use brainfuck::parser;
+/// # use brain_corrosion::parser;
 /// # use std::io::BufReader;
 ///
 /// let source = "[-]";
