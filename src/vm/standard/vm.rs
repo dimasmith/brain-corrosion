@@ -11,7 +11,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::vm::{Vm, Output, Input, standatd_output, standard_input};
+use crate::vm::{Vm, Output, Input, standard_output, standard_input};
 
 const DEFAULT_MEMORY_SIZE: usize = 30000;
 
@@ -82,7 +82,7 @@ impl StandardVm {
             mp: 0,
             program: vec![].into_boxed_slice(),
             ip: 0,
-            output: standatd_output(),
+            output: standard_output(),
             input: standard_input(),
         }
     }
@@ -307,7 +307,7 @@ impl StandardVmBuilder {
     /// to their default values.
     pub fn build(self) -> StandardVm {
         let memory = vec![0; self.mem_size.unwrap_or(DEFAULT_MEMORY_SIZE)].into_boxed_slice();
-        let output = self.output.unwrap_or_else(|| standatd_output());
+        let output = self.output.unwrap_or_else(|| standard_output());
         let input = self.input.unwrap_or_else(|| standard_input());
         StandardVm {
             memory,

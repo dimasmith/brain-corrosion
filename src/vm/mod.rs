@@ -27,7 +27,7 @@ pub fn standard_input() -> Input {
 pub type Output = Rc<RefCell<dyn Write>>;
 
 /// Create reference to the standard output.
-pub fn standatd_output() -> Output {
+pub fn standard_output() -> Output {
     Rc::new(RefCell::new(BufWriter::new(stdout())))
 }
 
