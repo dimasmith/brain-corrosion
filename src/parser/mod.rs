@@ -6,6 +6,7 @@ use std::{
     io::{Error, Read},
     vec,
 };
+use std::io::BufReader;
 
 /// Source code token.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -22,18 +23,34 @@ pub enum Token {
 
 /// Parse brainfuck program source into the list of tokens.
 ///
+/// # Examples
+///
+/// Reading program from string.
 /// ```
+/// # use std::error::Error;
 /// # use brain_corrosion::parser;
 /// # use std::io::BufReader;
-///
+/// # fn parse_string() -> Result<(), Box<dyn Error>> {
 /// let source = "[-]";
 /// let mut input = BufReader::new(source.as_bytes());
-/// let program = parser::parse(&mut input).unwrap();
+/// let program = parser::parse(&mut input)?;
+/// # Ok(())
+/// # }
 /// ```
-pub fn parse(input: &mut dyn Read) -> Result<Box<[Token]>, Error> {
+///
+/// Reading program from the standard input.
+/// ```
+/// # use std::io::stdin;
+/// # use brain_corrosion::parser;
+/// let program = parser::parse(stdin());
+/// ```
+///
+/// Note that the parser can accept mutable references to readers in addition to owned readers.
+pub fn parse<R: Read>(input: R) -> Result<Box<[Token]>, Error> {
     let mut code = vec![];
     let mut buf = vec![];
-    input.read_to_end(&mut buf)?;
+    let mut reader = BufReader::new(input);
+    reader.read_to_end(&mut buf)?;
     for b in buf.iter() {
         let ch = *b as char;
         match ch {
