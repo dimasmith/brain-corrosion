@@ -228,9 +228,20 @@ impl Vm for StandardVm {
 
     type Error = VmError;
 
-    fn run(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error> {
+    fn execute(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error> {
+        self.load(program)?;
+        self.run()
+    }
+
+    fn load(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error> {
         self.reset();
         self.program = program;
+        Ok(())
+    }
+
+    fn run(&mut self) -> Result<(), Self::Error> {
+        self.ip = 0;
+        self.mp = 0;
 
         while let Some(op) = self.operation() {
             let ip = match op {
@@ -429,7 +440,7 @@ mod tests {
     fn run_empty_program() {
         let mut vm = StandardVm::default();
 
-        let result = vm.run(Box::new([]));
+        let result = vm.execute(Box::new([]));
 
         assert_eq!(vm.get(), 0, "memory must not change");
         assert_eq!(
@@ -443,7 +454,7 @@ mod tests {
     fn move_instruction_pointer() {
         let mut vm = StandardVm::default();
 
-        vm.run(Box::new([Operation::Inc])).unwrap();
+        vm.execute(Box::new([Operation::Inc])).unwrap();
 
         assert_eq!(
             vm.ip, 1,
@@ -456,7 +467,7 @@ mod tests {
         let mut vm = StandardVm::default();
         vm.put(5);
 
-        vm.run(Box::new([
+        vm.execute(Box::new([
             Operation::LoopForward,
             Operation::Dec,
             Operation::LoopBack,
@@ -471,7 +482,7 @@ mod tests {
     fn simple_loop() {
         let mut vm = StandardVm::default();
 
-        vm.run(Box::new([
+        vm.execute(Box::new([
             Operation::Inc,
             Operation::Inc,
             Operation::Inc,
@@ -498,7 +509,7 @@ mod tests {
         let mut vm = StandardVm::default();
         let program = Box::new([Operation::LoopForward]);
 
-        let result = vm.run(program);
+        let result = vm.execute(program);
 
         assert!(result.is_err(), "the loop is not closed and VM must fail");
         assert_eq!(result.err().unwrap(), VmError::NoLoopEnd);
@@ -509,7 +520,7 @@ mod tests {
         let mut vm = StandardVm::default();
         let program = Box::new([Operation::Inc, Operation::LoopBack]);
 
-        let result = vm.run(program);
+        let result = vm.execute(program);
 
         assert!(result.is_err(), "the loop is not closed and VM must fail");
         assert_eq!(result.err().unwrap(), VmError::NoLoopStart);

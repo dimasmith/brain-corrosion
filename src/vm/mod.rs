@@ -11,8 +11,14 @@ pub trait Vm {
     type Operation;
     type Error;
 
-    /// Run the program in a virtual machine.
-    fn run(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error>;
+    /// Loads and immediately run the program.
+    fn execute(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error>;
+
+    /// Loads the program into the virtual machine.
+    fn load(&mut self, program: Box<[Self::Operation]>) -> Result<(), Self::Error>;
+
+    /// Runs previously loaded program
+    fn run(&mut self) -> Result<(), Self::Error>;
 }
 
 /// Input reader reference for virtual machine.

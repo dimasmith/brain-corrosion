@@ -23,5 +23,6 @@ fn execute_on_standard_vm<R: Read>(input: R) {
     let tokens = parser::parse(reader).expect("source parsing failed");
     let program = translator::translate(tokens.as_ref());
     let mut vm = StandardVm::new();
-    vm.run(program).expect("program failed");
+    vm.load(program).expect("cannot load program");
+    vm.run().expect("program execution failed");
 }

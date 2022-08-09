@@ -46,7 +46,7 @@ fn run_program(source: &str) -> String {
     let output = Rc::new(RefCell::new(TestOut::default()));
     {
         let mut vm = StandardVmBuilder::new().with_output(output.clone()).build();
-        vm.run(ops).unwrap();
+        vm.execute(ops).unwrap();
     }
     output.clone().as_ref().borrow().to_string()
 }
