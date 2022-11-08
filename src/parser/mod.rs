@@ -2,14 +2,14 @@
 //!
 //! Produces an array of tokens representing the source.
 
+use std::io::BufReader;
 use std::{
     io::{Error, Read},
     vec,
 };
-use std::io::BufReader;
 
 /// Source code token.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
     Inc,
     Dec,

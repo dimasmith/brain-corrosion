@@ -11,15 +11,14 @@ use std::{
     rc::Rc,
 };
 
-use crate::vm::{Vm, Output, Input, standard_output, standard_input};
+use crate::vm::{standard_input, standard_output, Input, Output, Vm};
 
 const DEFAULT_MEMORY_SIZE: usize = 30000;
-
 
 /// Executable instruction for virtual machine.
 ///
 /// The set of operations is exactly the same as in brainfuck languate definition.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operation {
     /// `+` - Increment the memory cell at the pointer
     Inc,
@@ -40,7 +39,7 @@ pub enum Operation {
 }
 
 /// Errors thrown by the virtual machine during execution.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VmError {
     /// Unmatched `[` instruction
     NoLoopEnd,
@@ -73,7 +72,6 @@ pub struct StandardVm {
 }
 
 impl StandardVm {
-
     /// Create vm with standard parameters.
     pub fn new() -> Self {
         let mem = vec![0; DEFAULT_MEMORY_SIZE];
