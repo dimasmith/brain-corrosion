@@ -1,5 +1,7 @@
 # brainfuck
 
+[![Rust](https://github.com/dimasmith/brain-corrosion/actions/workflows/rust.yml/badge.svg)](https://github.com/dimasmith/brain-corrosion/actions/workflows/rust.yml)
+
 A library to implement the brainfuck language interpreter.
 
 Contains a simple virtual machine that can execute brainfuck opcodes directly.
