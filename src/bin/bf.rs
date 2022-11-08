@@ -1,5 +1,5 @@
+use std::io::{stdin, BufReader, Read};
 use std::{env, fs};
-use std::io::{BufReader, Read, stdin};
 
 use brain_corrosion::parser;
 use brain_corrosion::vm::standard::translator;

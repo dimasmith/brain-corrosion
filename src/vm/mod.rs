@@ -1,11 +1,15 @@
 //! Brainfuck virtual machines definitions and implementations.
 
-use std::{rc::Rc, cell::RefCell, io::{Read, Write, BufReader, stdin, stdout, BufWriter}};
+use std::{
+    cell::RefCell,
+    io::{stdin, stdout, BufReader, BufWriter, Read, Write},
+    rc::Rc,
+};
 
 pub mod standard;
 
 /// A trait for brainfuck virtual machine.
-/// 
+///
 /// Accepts a boxed array of operations and expect to return error when something goes wrong.
 pub trait Vm {
     type Operation;
@@ -30,4 +34,3 @@ pub type Output = Rc<RefCell<dyn Write>>;
 pub fn standard_output() -> Output {
     Rc::new(RefCell::new(BufWriter::new(stdout())))
 }
-

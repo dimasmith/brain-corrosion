@@ -1,12 +1,12 @@
+use brain_corrosion::parser::parse;
+use brain_corrosion::vm::standard::translator;
+use brain_corrosion::vm::standard::vm::StandardVmBuilder;
+use brain_corrosion::vm::Vm;
 use std::{
     cell::RefCell,
     io::{BufReader, Write},
     rc::Rc,
 };
-use brain_corrosion::parser::parse;
-use brain_corrosion::vm::standard::translator;
-use brain_corrosion::vm::standard::vm::StandardVmBuilder;
-use brain_corrosion::vm::Vm;
 
 struct TestOut {
     buf: Vec<u8>,
